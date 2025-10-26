@@ -1,0 +1,15 @@
+/* Global */
+body {
+  font-family: "Inter", sans-serif;
+}
+
+/* Specific elements */
+h1 {
+  font-family: "Inter", sans-serif;
+  font-weight: 700; /* bold */
+}
+
+p {
+  font-family: "Inter", sans-serif;
+  font-weight: 400; /* regular */
+}
