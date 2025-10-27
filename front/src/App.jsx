@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import Layout from "./dashboard/Layout";
 import Sidebar from "./dashboard/sidebar/Sidebar";
 import Dashboard from "./dashboard/Dashboard";
+import Myprofile from "./dashboard/Myprofile";
 
 export default function App() {
   const [activeMenu, setActiveMenu] = useState("Dashboard");
@@ -12,8 +13,8 @@ export default function App() {
     switch (activeMenu) {
       case "Dashboard":
         return <Dashboard />;
-      case "User Management":
-        return <div>Manage your users here.</div>;
+      case "Profile":
+        return <Myprofile />;
       case "Approve":
         return <div>Approval tasks go here.</div>;
       case "Groups":

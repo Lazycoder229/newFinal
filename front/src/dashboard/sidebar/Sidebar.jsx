@@ -12,7 +12,7 @@ import {
 
 const menuItems = [
   { name: "Dashboard", icon: <LayoutDashboard size={20} /> },
-  { name: "User Management", icon: <Users size={20} /> },
+  { name: "Profile", icon: <Users size={20} /> },
   { name: "Mentor", icon: <CheckSquare size={20} /> },
   { name: "Groups", icon: <GroupsIcon size={20} /> },
   { name: "Forum", icon: <MessagesSquare size={20} /> },

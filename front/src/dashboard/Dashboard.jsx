@@ -11,7 +11,7 @@ import {
 export default function Dashboard() {
   function MentorCard({ mentor }) {
     return (
-      <div className="bg-white rounded p-3 outline outline-gray-300 ">
+      <div className="bg-white rounded p-3 outline outline-gray-300  ">
         <div className="flex items-center mb-4">
           <div className="w-10 h-10 mr-3 flex items-center justify-center rounded-full">
             <img
@@ -66,7 +66,7 @@ export default function Dashboard() {
       </div>
 
       {/* GRID: Left & Right */}
-      <div className="grid grid-cols-[2fr_1fr] gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-4">
         {/* LEFT SIDE */}
 
         <div className="mt-4">
@@ -113,7 +113,8 @@ export default function Dashboard() {
             {/* end card */}
           </div>
           {/* Mentorship Connections */}
-          <div className="mt-6">
+
+          <div className="mt-6 ">
             <div className="flex items-center mb-3">
               <h1 className="text-lg font-semibold mr-2">
                 Mentorship Connections
@@ -127,12 +128,12 @@ export default function Dashboard() {
                 </span>
               )}
             </div>
+          </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              {visibleMentors.map((mentor) => (
-                <MentorCard key={mentor.id} mentor={mentor} />
-              ))}
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {visibleMentors.map((mentor) => (
+              <MentorCard key={mentor.id} mentor={mentor} />
+            ))}
           </div>
 
           {/* Recent Activity */}
