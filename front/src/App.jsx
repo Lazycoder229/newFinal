@@ -1,20 +1,19 @@
-// App.jsx
 import React, { useState } from "react";
 import Layout from "./dashboard/Layout";
-import Sidebar from "./dashboard/sidebar/Sidebar";
-import Dashboard from "./dashboard/Dashboard";
 import Myprofile from "./dashboard/Myprofile";
+import AdminDashboard from "./admin/AdminDashboard";
+import UserManagement from "./admin/UserManagement";
 
 export default function App() {
   const [activeMenu, setActiveMenu] = useState("Dashboard");
 
-  // Render different content based on the active menu
+  // Render the main page content based on the selected menu
   const renderContent = () => {
     switch (activeMenu) {
       case "Dashboard":
-        return <Dashboard />;
-      case "Profile":
-        return <Myprofile />;
+        return <AdminDashboard />;
+      case "User Management":
+        return <UserManagement />;
       case "Approve":
         return <div>Approval tasks go here.</div>;
       case "Groups":
@@ -24,7 +23,7 @@ export default function App() {
       case "Announcement":
         return <div>Announcements for your team.</div>;
       case "Logs":
-        return <div>System logs will be shown.</div>;
+        return <div>System logs will be shown here.</div>;
       case "System Settings":
         return <div>Change system settings here.</div>;
       default:
@@ -34,8 +33,8 @@ export default function App() {
 
   return (
     <Layout
-      sidebar={<Sidebar active={activeMenu} onSelect={setActiveMenu} />}
-      header={<h1 className="text-xl font-bold">{activeMenu}</h1>}
+      activeMenu={activeMenu}
+      onMenuSelect={setActiveMenu} // 🔹 pass control to Layout
     >
       {renderContent()}
     </Layout>

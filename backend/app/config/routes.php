@@ -45,11 +45,15 @@ defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 $router->get('/', function() {
     echo json_encode(['message' => 'API is running!']);
 });
+// Allow method override for forms and axios (_method)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['_method'])) {
+    $_SERVER['REQUEST_METHOD'] = strtoupper($_REQUEST['_method']);
+}
 
 
 // USERS ROUTES
-$router->get('/api/users', 'UserController@index');
-$router->get('/api/users/{id}', 'UserController@get_users');
-$router->post('/api/users', 'UserController@create');
-$router->put('/api/users/{id}', 'UserController@update');
-$router->delete('/api/users/{id}', 'UserController@delete');
+$router->get('/api/users', 'UserController::index');
+$router->get('/api/users/{id}', 'UserController::get_users');
+$router->post('/api/users', 'UserController::create');
+$router->put('/api/users/{id}', 'UserController::update');
+$router->delete('/api/users/{id}', 'UserController::delete');

@@ -1,0 +1,17 @@
+CREATE DATABASE peerconnectDB;
+USE peerconnectDB;
+
+
+CREATE TABLE users (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  first_name VARCHAR(100) NOT NULL,
+  last_name VARCHAR(100) NOT NULL,
+  email VARCHAR(150) NOT NULL UNIQUE,
+  role ENUM('Member', 'Mentor', 'Admin') DEFAULT 'Member',
+  job_title VARCHAR(150),
+  profile_pic VARCHAR(255) DEFAULT NULL,
+  status ENUM('Active', 'Inactive') DEFAULT 'Active',
+  last_active DATE DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
