@@ -27,7 +27,7 @@ export default function UserManagement() {
   const [filterStatus, setFilterStatus] = useState("All");
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 13;
 
   const [form, setForm] = useState({
     first_name: "",
@@ -333,8 +333,21 @@ export default function UserManagement() {
   );
 
   return (
-    <div className="p-4">
-      <ToastContainer position="top-right" autoClose={3000} />
+    <div className="">
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        closeButton={false} // ✅ disables the "×" icon
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        toastClassName="bg-white border border-gray-300 rounded-lg shadow-lg text-gray-800 px-4 py-2"
+        bodyClassName="font-medium text-sm"
+      />
 
       <div className="flex justify-between items-center mb-6">
         <div>

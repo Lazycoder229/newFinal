@@ -3,11 +3,13 @@ import Layout from "./dashboard/Layout";
 import Myprofile from "./dashboard/Myprofile";
 import AdminDashboard from "./admin/AdminDashboard";
 import UserManagement from "./admin/UserManagement";
+import PeerConnectLanding from "./dashboard/AuthPage";
 
 export default function App() {
   const [activeMenu, setActiveMenu] = useState("Dashboard");
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // ✅ controls mode (landing or dashboard)
 
-  // Render the main page content based on the selected menu
+  // 🔹 This controls which dashboard content to show
   const renderContent = () => {
     switch (activeMenu) {
       case "Dashboard":
@@ -32,11 +34,16 @@ export default function App() {
   };
 
   return (
-    <Layout
-      activeMenu={activeMenu}
-      onMenuSelect={setActiveMenu} // 🔹 pass control to Layout
-    >
-      {renderContent()}
-    </Layout>
+    <>
+      {!isLoggedIn ? (
+        // 🔹 Show PeerConnect landing page first
+        <PeerConnectLanding onLoginSuccess={() => setIsLoggedIn(true)} />
+      ) : (
+        // 🔹 Once logged in, show the dashboard layout
+        <Layout activeMenu={activeMenu} onMenuSelect={setActiveMenu}>
+          {renderContent()}
+        </Layout>
+      )}
+    </>
   );
 }
