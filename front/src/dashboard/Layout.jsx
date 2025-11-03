@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Bell, Menu, TextAlignJustify, ChevronRight } from "lucide-react";
+import { Bell, Menu, TextAlignJustify, ChevronRight , MessageSquare } from "lucide-react";
 import Sidebar from "./sidebar/Sidebar";
 
 export default function Layout({ children, activeMenu, onMenuSelect }) {
@@ -8,7 +8,7 @@ export default function Layout({ children, activeMenu, onMenuSelect }) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // ✅ Close dropdown on outside click
+  //  Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -36,7 +36,7 @@ export default function Layout({ children, activeMenu, onMenuSelect }) {
           active={activeMenu}
           onSelect={(menu) => {
             onMenuSelect(menu);
-            setIsMobileSidebarOpen(false); // ✅ auto-close on mobile tap
+            setIsMobileSidebarOpen(false); // auto-close on mobile tap
           }}
           collapsed={!isSidebarOpen}
         />
@@ -76,9 +76,10 @@ export default function Layout({ children, activeMenu, onMenuSelect }) {
           >
             <Menu size={20} className="text-gray-700" />
           </button>
-
+          
           {/* Notifications + User dropdown */}
           <div className="flex items-center gap-4 relative" ref={dropdownRef}>
+            <button><MessageSquare size={20} className="tex-gray-600"/></button>
             <button className="relative p-2 rounded-full hover:bg-gray-100">
               <Bell size={18} className="text-gray-600" />
               <span className="absolute top-1 right-1 bg-red-500 w-2 h-2 rounded-full"></span>

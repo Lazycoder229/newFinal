@@ -1,5 +1,10 @@
 <?php
 defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
+// Allow method override for forms and axios (_method)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['_method'])) {
+    $_SERVER['REQUEST_METHOD'] = strtoupper($_REQUEST['_method']);
+}
+
 /**
  * ------------------------------------------------------------------
  * LavaLust - an opensource lightweight PHP MVC Framework
@@ -45,15 +50,34 @@ defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 $router->get('/', function() {
     echo json_encode(['message' => 'API is running!']);
 });
-// Allow method override for forms and axios (_method)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['_method'])) {
-    $_SERVER['REQUEST_METHOD'] = strtoupper($_REQUEST['_method']);
-}
 
 
 // USERS ROUTES
 $router->get('/api/users', 'UserController::index');
-$router->get('/api/users/{id}', 'UserController::get_users');
+$router->get('/api/users/{id}', 'UserController::get_user');    
 $router->post('/api/users', 'UserController::create');
 $router->put('/api/users/{id}', 'UserController::update');
 $router->delete('/api/users/{id}', 'UserController::delete');
+
+// MENTORSHIP ROUTES
+$router->get('/api/mentorships', 'MentorshipController::index');                // Get all mentorships
+$router->get('/api/mentorships/{id}', 'MentorshipController::get_mentorship');   // Get single mentorship
+$router->post('/api/mentorships', 'MentorshipController::add');                 // Create a new mentorship
+$router->put('/api/mentorships/{id}', 'MentorshipController::update');          // Update mentorship
+$router->delete('/api/mentorships/{id}', 'MentorshipController::delete');       // Delete mentorship
+// ---------- GROUP ROUTES ----------
+
+// Groups CRUD
+$router->get('/api/groups', 'GroupController::index');                     // Get all groups
+$router->get('/api/groups/{id}', 'GroupController::get_group');           // Get single group
+$router->post('/api/groups', 'GroupController::create');                  // Create a new group
+$router->put('/api/groups/{id}', 'GroupController::update');              // Update group
+$router->delete('/api/groups/{id}', 'GroupController::delete');           // Delete group
+
+// Group Members
+// Group Members
+$router->get('/api/members', 'GroupController::all_members');          // Get all members
+$router->get('/api/members/{id}', 'GroupController::get_member');       // Get single member
+$router->post('/api/members', 'GroupController::add_member');          // Add a member
+$router->put('/api/members/{id}', 'GroupController::update_member');   // Update a member
+$router->delete('/api/members/{id}', 'GroupController::remove_member'); // Remove a member

@@ -15,18 +15,23 @@ import {
   Mail,
   Lock,
 } from "lucide-react";
+import LoginPage from "./LoginPage";
+import ForgotPasword from "./ForgotPasword";
+import RegisterPage from "./RegisterPage";
 
-export default function PeerConnectLanding({ onLoginSuccess }) {
+export default function PeerConnectLanding() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [showLogin, setShowLogin] = useState(false); // 🟢 NEW: for modal visibility
+  const [showLogin, setShowLogin] = useState(false); // NEW: for modal visibility
+   
   const [showRegister, setShowRegister] = useState(false);
-  const toggleRegister = () => setShowRegister(!showRegister);
-
-  const toggleMenu = () => setMenuOpen(!menuOpen);
-  const toggleLogin = () => setShowLogin(!showLogin); // 🟢 toggle login moda
-  const [showPassword, setShowPassword] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
   const [showForgot, setShowForgot] = useState(false);
+  const toggleRegister = () => setShowRegister(!showRegister);
+  const toggleLogin = () => setShowLogin(!showLogin); // toggle login moda
+  const toggleMenu = () => setMenuOpen(!menuOpen);
+ 
+
 
   return (
     <div className="font-sans bg-white text-gray-800">
@@ -64,8 +69,9 @@ export default function PeerConnectLanding({ onLoginSuccess }) {
         }
       `}</style>
       {/* ===== NAVBAR ===== */}
-      <header className="fixed top-0 left-0 w-full bg-white shadow-sm z-50">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+     <header className="fixed top-0 left-0 w-full bg-white shadow-sm z-50">
+  <div className="w-full  px-4 sm:px-6 md:px-8 lg:px-10 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-0">
+    
           <div className="flex gap-2">
             <img src="./icon.png" alt="" className="w-9 h-9" />
             <h1 className="text-2xl font-extrabold text-gray-600">
@@ -88,7 +94,7 @@ export default function PeerConnectLanding({ onLoginSuccess }) {
             </a>
           </nav>
 
-          <div className="hidden md:flex space-x-3">
+          <div className="hidden md:flex lg:flex space-x-3">
             <button
               onClick={toggleLogin}
               className="px-3 py-1 rounded-lg bg-white text-indigo-600 border border-indigo-600 hover:bg-indigo-100 transition font-medium"
@@ -134,440 +140,16 @@ export default function PeerConnectLanding({ onLoginSuccess }) {
       </header>
       {/* LOGIN MODAL */}
       {showLogin && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[1000]">
-          <div className="bg-white rounded-2xl shadow-2xl w-[70%] max-w-4xl flex flex-col md:flex-row overflow-hidden relative animate-fadeIn">
-            {/* Close Button */}
-            <button
-              onClick={toggleLogin}
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
-            >
-              <X size={22} />
-            </button>
-
-            {/* LEFT SIDE – Branding (White/Slate Background) */}
-            <div
-              style={{
-                backgroundImage: `url("https://assets-v2.lottiefiles.com/a/fe0a9612-83f3-11ee-9945-27ca59862aef/gMMelbR6U7.gif")`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
-              className="md:w-1/2 relative bg-slate-100 flex flex-col items-center justify-center p-6 text-center border-r border-gray-200 text-[16px]"
-            >
-              {/* White overlay */}
-              <div className="absolute inset-0 bg-white/85"></div>
-
-              {/* Content (make sure it's above the overlay) */}
-              <div className="relative z-10">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                  Welcome to{" "}
-                  <span className="text-indigo-600">PeerConnect!</span>
-                </h2>
-                <p className="text-gray-600 max-w-sm mx-auto">
-                  Connect, learn, and grow with mentors and peers who inspire
-                  you.
-                </p>
-              </div>
-            </div>
-
-            {/* RIGHT SIDE – Login Form */}
-            <div className="md:w-1/2 w-full p-6 flex flex-col justify-center text-[16px]">
-              <img
-                src="/icon.png"
-                alt="PeerConnect Logo"
-                className="w-20 h-20 mx-auto mb-4"
-              />
-              <h3 className="text-xl font-bold text-gray-800 mb-5 text-center">
-                Login to Your Account
-              </h3>
-
-              <form
-                className="space-y-4"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  // Handle login logic here
-                  onLoginSuccess();
-                }}
-              >
-                {/* Email */}
-                <div className="space-y-4">
-                  {/* Email */}
-                  <div className="text-left relative">
-                    <label className="block text-gray-600 mb-1 text-[16px]">
-                      Email
-                    </label>
-                    <div className="relative">
-                      <Mail
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                        size={18}
-                      />
-                      <input
-                        type="email"
-                        placeholder="Enter your email"
-                        className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-1.5 text-[16px] focus:ring-1 focus:ring-slate-400 outline-none"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {/* Password */}
-                  <div className="text-left relative">
-                    <label className="block text-gray-600 mb-1 text-[16px]">
-                      Password
-                    </label>
-                    <div className="relative">
-                      <Lock
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                        size={18}
-                      />
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Enter your password"
-                        className="w-full border border-gray-300 rounded-lg pl-9 pr-10 py-1.5 text-[16px] focus:ring-1 focus:ring-slate-400 outline-none"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                      >
-                        {showPassword ? (
-                          <EyeOff size={18} />
-                        ) : (
-                          <Eye size={18} />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                {/* Remember me + Forgot Password */}
-                <div className="flex items-center justify-between text-sm text-gray-600 text-[16px]">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      className="accent-indigo-600 scale-95"
-                    />
-                    Remember me
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowLogin(false);
-                      setShowForgot(true);
-                    }}
-                    className="text-indigo-600 hover:underline"
-                  >
-                    Forgot password?
-                  </button>
-                </div>
-
-                {/* Login Button */}
-                <button
-                  type="submit"
-                  className="w-full py-1.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-all text-[16px]"
-                >
-                  Login
-                </button>
-              </form>
-
-              {/* OR Divider */}
-              <div className="flex items-center gap-2 my-4">
-                <hr className="flex-1 border-gray-300" />
-                <span className="text-gray-500 text-sm">OR</span>
-                <hr className="flex-1 border-gray-300" />
-              </div>
-
-              {/* Social Login Buttons */}
-              <div className="flex flex-col gap-2">
-                <button className="flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-1.5 hover:bg-gray-50 transition text-[16px]">
-                  <img
-                    src="https://www.svgrepo.com/show/475656/google-color.svg"
-                    alt="Google"
-                    className="w-4 h-4"
-                  />
-                  Continue with Google
-                </button>
-
-                <button className="flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-1.5 hover:bg-gray-50 transition text-[16px]">
-                  <img
-                    src="https://cdn-icons-png.flaticon.com/512/174/174857.png"
-                    alt="LinkedIn"
-                    className="w-4 h-4"
-                  />
-                  Continue with LinkedIn
-                </button>
-              </div>
-
-              {/* Register link */}
-              <p className="text-gray-500 mt-5 text-center text-[16px]">
-                Don’t have an account?{" "}
-                <span
-                  onClick={() => {
-                    setShowRegister(true);
-                    setShowLogin(false);
-                  }}
-                  className="text-indigo-600 hover:underline cursor-pointer"
-                >
-                  Register
-                </span>
-              </p>
-            </div>
-          </div>
-        </div>
+      <div> <LoginPage toggleLogin={toggleLogin} setShowPassword={setShowPassword} showForgot={showForgot} setShowRegister={setShowRegister}/></div>
       )}
       {/* FORGOT PASSWORD MODAL */}
       {showForgot && (
-        <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[1000]"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowForgot(false);
-          }}
-        >
-          <div
-            className="bg-white rounded-lg shadow-xl w-[90%] max-w-[360px] p-3 relative animate-fadeIn"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Close button */}
-            <button
-              onClick={() => setShowForgot(false)}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-            >
-              <X size={18} />
-            </button>
-
-            {/* Content */}
-            <h3 className="text-lg font-semibold text-gray-800 mb-1 text-center">
-              Forgot Password
-            </h3>
-            <p className="text-gray-600 text-center mb-3 text-[13px] leading-snug">
-              Enter your email and we’ll send you a link to reset it.
-            </p>
-
-            <form className="space-y-2.5">
-              <div className="text-left relative">
-                <label className="block text-gray-600 mb-1 text-[14px]">
-                  Email Address
-                </label>
-
-                <Mail
-                  size={16}
-                  className="absolute left-3 top-[35px] text-gray-400 pointer-events-none"
-                />
-
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  className="w-full border border-gray-300 rounded-md pl-8 pr-2 py-1.5 text-[14px] focus:ring-1 focus:ring-slate-400 outline-none"
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-1.5 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 transition-all text-[14px]"
-              >
-                Send Reset Link
-              </button>
-            </form>
-
-            <p className="text-center text-xs text-gray-500 mt-3">
-              Remembered your password?{" "}
-              <span
-                onClick={() => {
-                  setShowForgot(false);
-                  setShowLogin(true);
-                }}
-                className="text-indigo-600 hover:underline cursor-pointer"
-              >
-                Back to Login
-              </span>
-            </p>
-          </div>
-        </div>
+        <ForgotPasword/>
       )}
 
       {/* REGISTER MODAL */}
       {showRegister && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[1000]">
-          <div className="bg-white rounded-2xl shadow-2xl w-[70%] max-w-4xl flex flex-col md:flex-row overflow-hidden relative animate-fadeIn">
-            {/* Close Button */}
-            <button
-              onClick={toggleRegister}
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
-            >
-              <X size={22} />
-            </button>
-
-            {/* LEFT SIDE – Illustration / Welcome */}
-            <div
-              style={{
-                backgroundImage: `url("https://assets-v2.lottiefiles.com/a/fe0a9612-83f3-11ee-9945-27ca59862aef/gMMelbR6U7.gif")`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
-              className="md:w-1/2 relative flex flex-col items-center justify-center p-6 text-center border-r border-gray-200"
-            >
-              {/* White overlay */}
-              <div className="absolute inset-0 bg-white/85"></div>
-
-              {/* Content */}
-              <div className="relative z-10">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                  Join <span className="text-indigo-600">PeerConnect</span>{" "}
-                  Today!
-                </h2>
-                <p className="text-gray-600 max-w-sm mx-auto">
-                  Start your journey to connect, collaborate, and grow with
-                  mentors and peers around the world.
-                </p>
-              </div>
-            </div>
-
-            {/* RIGHT SIDE – Register Form */}
-            <div className="md:w-1/2 w-full p-6 flex flex-col justify-center text-[16px]">
-              <img
-                src="/icon.png"
-                alt="PeerConnect Logo"
-                className="w-20 h-20 mx-auto mb-4"
-              />
-              <h3 className="text-xl font-bold text-gray-800 mb-5 text-center">
-                Create an Account
-              </h3>
-
-              <form className="space-y-4">
-                {/* Full Name */}
-                <div className="text-left relative">
-                  <label className="block text-gray-600 mb-1 text-[16px]">
-                    Full Name
-                  </label>
-                  <div className="relative">
-                    <Users
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                      size={18}
-                    />
-                    <input
-                      type="text"
-                      placeholder="Enter your full name"
-                      className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-1.5 text-[16px] focus:ring-1 focus:ring-slate-400 outline-none"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Email */}
-                <div className="text-left relative">
-                  <label className="block text-gray-600 mb-1 text-[16px]">
-                    Email
-                  </label>
-                  <div className="relative">
-                    <Mail
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                      size={18}
-                    />
-                    <input
-                      type="email"
-                      placeholder="Enter your email"
-                      className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-1.5 text-[16px] focus:ring-1 focus:ring-slate-400 outline-none"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Password */}
-                <div className="text-left relative">
-                  <label className="block text-gray-600 mb-1 text-[16px]">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <Lock
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                      size={18}
-                    />
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Create a password"
-                      className="w-full border border-gray-300 rounded-lg pl-9 pr-10 py-1.5 text-[16px] focus:ring-1 focus:ring-slate-400 outline-none"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Terms */}
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <input
-                    type="checkbox"
-                    className="accent-indigo-600 scale-95"
-                  />
-                  <span>
-                    I agree to the{" "}
-                    <a href="#" className="text-indigo-600 hover:underline">
-                      Terms of Service
-                    </a>{" "}
-                    and{" "}
-                    <a href="#" className="text-indigo-600 hover:underline">
-                      Privacy Policy
-                    </a>
-                  </span>
-                </div>
-
-                {/* Register Button */}
-                <button
-                  type="submit"
-                  className="w-full py-1.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-all text-[16px]"
-                >
-                  Register
-                </button>
-              </form>
-
-              {/* OR Divider */}
-              <div className="flex items-center gap-2 my-4">
-                <hr className="flex-1 border-gray-300" />
-                <span className="text-gray-500 text-sm">OR</span>
-                <hr className="flex-1 border-gray-300" />
-              </div>
-
-              {/* Social Login */}
-              <div className="flex flex-col gap-2">
-                <button className="flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-1.5 hover:bg-gray-50 transition text-[16px]">
-                  <img
-                    src="https://www.svgrepo.com/show/475656/google-color.svg"
-                    alt="Google"
-                    className="w-4 h-4"
-                  />
-                  Continue with Google
-                </button>
-                <button className="flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-1.5 hover:bg-gray-50 transition text-[16px]">
-                  <img
-                    src="https://cdn-icons-png.flaticon.com/512/174/174857.png"
-                    alt="LinkedIn"
-                    className="w-4 h-4"
-                  />
-                  Continue with LinkedIn
-                </button>
-              </div>
-
-              {/* Login Link */}
-              <p className="text-gray-500 mt-5 text-center text-[16px]">
-                Already have an account?{" "}
-                <span
-                  onClick={() => {
-                    setShowRegister(false);
-                    setShowLogin(true);
-                  }}
-                  className="text-indigo-600 hover:underline cursor-pointer"
-                >
-                  Login
-                </span>
-              </p>
-            </div>
-          </div>
-        </div>
+       <RegisterPage/>
       )}
 
       {/* ===== FLOATING BACK TO TOP BUTTON ===== */}
