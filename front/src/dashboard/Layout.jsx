@@ -1,8 +1,20 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Bell, Menu, TextAlignJustify, ChevronRight , MessageSquare } from "lucide-react";
+import {
+  Bell,
+  Menu,
+  TextAlignJustify,
+  ChevronRight,
+  MessageSquare,
+} from "lucide-react";
+import { toast } from "react-toastify";
 import Sidebar from "./sidebar/Sidebar";
 
-export default function Layout({ children, activeMenu, onMenuSelect }) {
+export default function Layout({
+  children,
+  activeMenu,
+  onMenuSelect,
+  onLogout,
+}) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -18,6 +30,34 @@ export default function Layout({ children, activeMenu, onMenuSelect }) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleLogout = () => {
+    // Clear auth tokens from both storages
+    try {
+      window.localStorage.removeItem("auth_token");
+      window.localStorage.removeItem("user");
+    } catch (e) {
+      console.warn("localStorage clear error", e);
+    }
+    try {
+      window.sessionStorage.removeItem("auth_token");
+      window.sessionStorage.removeItem("user");
+    } catch (e) {
+      console.warn("sessionStorage clear error", e);
+    }
+
+    setIsDropdownOpen(false);
+
+    // Show logout toast notification
+    toast.success("Logging out...", {
+      autoClose: 1500,
+    });
+
+    // Delay logout to show toast
+    setTimeout(() => {
+      if (typeof onLogout === "function") onLogout();
+    }, 1500);
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
@@ -76,10 +116,12 @@ export default function Layout({ children, activeMenu, onMenuSelect }) {
           >
             <Menu size={20} className="text-gray-700" />
           </button>
-          
+
           {/* Notifications + User dropdown */}
           <div className="flex items-center gap-4 relative" ref={dropdownRef}>
-            <button><MessageSquare size={20} className="tex-gray-600"/></button>
+            <button>
+              <MessageSquare size={20} className="tex-gray-600" />
+            </button>
             <button className="relative p-2 rounded-full hover:bg-gray-100">
               <Bell size={18} className="text-gray-600" />
               <span className="absolute top-1 right-1 bg-red-500 w-2 h-2 rounded-full"></span>
@@ -105,13 +147,18 @@ export default function Layout({ children, activeMenu, onMenuSelect }) {
               }`}
             >
               <button
-                onClick={() => alert("Edit Profile clicked")}
+                onClick={() => {
+                  // Close dropdown and navigate to edit profile flow
+                  setIsDropdownOpen(false);
+                  // For now, edit profile is not routed here — keep placeholder
+                  alert("Edit Profile clicked");
+                }}
                 className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
                 Edit Profile
               </button>
               <button
-                onClick={() => alert("Logout clicked")}
+                onClick={handleLogout}
                 className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
               >
                 Logout

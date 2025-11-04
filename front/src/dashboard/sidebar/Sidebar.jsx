@@ -1,4 +1,5 @@
-import { React } from "react";
+import React from "react";
+import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -11,16 +12,36 @@ import {
 } from "lucide-react";
 
 const menuItems = [
-  { name: "Dashboard", icon: <LayoutDashboard size={20} /> },
-  { name: "User Management", icon: <Users size={20} /> },
-  { name: "Mentor", icon: <CheckSquare size={20} /> },
-  { name: "Groups", icon: <GroupsIcon size={20} /> },
-  { name: "Forum", icon: <MessagesSquare size={20} /> },
-  { name: "Announcement", icon: <Bell size={20} /> },
-  { name: "Logs", icon: <FileText size={20} /> },
-  { name: "System Settings", icon: <Settings size={20} /> },
+  {
+    name: "Dashboard",
+    icon: <LayoutDashboard size={20} />,
+    path: "/admin-dashboard",
+  },
+  { name: "User Management", icon: <Users size={20} />, path: "/admin-users" },
+  { name: "Mentor", icon: <CheckSquare size={20} />, path: "/admin-mentor" },
+  { name: "Groups", icon: <GroupsIcon size={20} />, path: "/admin-groups" },
+  { name: "Forum", icon: <MessagesSquare size={20} />, path: "/admin-forum" },
+  {
+    name: "Announcement",
+    icon: <Bell size={20} />,
+    path: "/admin-announcements",
+  },
+  { name: "Logs", icon: <FileText size={20} />, path: "/admin-logs" },
+  {
+    name: "System Settings",
+    icon: <Settings size={20} />,
+    path: "/admin-settings",
+  },
 ];
+
 export default function Sidebar({ active, onSelect, collapsed }) {
+  const navigate = useNavigate();
+
+  const handleMenuClick = (item) => {
+    onSelect(item.name); // update active menu
+    navigate(item.path); // navigate to the route
+  };
+
   return (
     <aside className="flex flex-col flex-1 bg-white text-black">
       {/* Logo */}
@@ -40,7 +61,7 @@ export default function Sidebar({ active, onSelect, collapsed }) {
         {menuItems.map((item) => (
           <button
             key={item.name}
-            onClick={() => onSelect(item.name)}
+            onClick={() => handleMenuClick(item)}
             className={`flex items-center gap-3 p-2 rounded-md transition-all duration-200 ${
               active === item.name
                 ? "bg-blue-100 text-blue-500"

@@ -19,19 +19,33 @@ import LoginPage from "./LoginPage";
 import ForgotPasword from "./ForgotPasword";
 import RegisterPage from "./RegisterPage";
 
-export default function PeerConnectLanding() {
+export default function PeerConnectLanding({ onLoginSuccess }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showLogin, setShowLogin] = useState(false); // NEW: for modal visibility
-   
+
   const [showRegister, setShowRegister] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [showForgot, setShowForgot] = useState(false);
-  const toggleRegister = () => setShowRegister(!showRegister);
-  const toggleLogin = () => setShowLogin(!showLogin); // toggle login moda
-  const toggleMenu = () => setMenuOpen(!menuOpen);
- 
+  const toggleRegister = () => {
+    setShowRegister((s) => !s);
+    setShowLogin(false);
+    setShowForgot(false);
+  };
 
+  const toggleLogin = () => {
+    setShowLogin((s) => !s);
+    setShowRegister(false);
+    setShowForgot(false);
+  }; // toggle login modal
+
+  const toggleForgot = () => {
+    setShowForgot((s) => !s);
+    setShowLogin(false);
+    setShowRegister(false);
+  };
+
+  const toggleMenu = () => setMenuOpen(!menuOpen);
 
   return (
     <div className="font-sans bg-white text-gray-800">
@@ -69,9 +83,8 @@ export default function PeerConnectLanding() {
         }
       `}</style>
       {/* ===== NAVBAR ===== */}
-     <header className="fixed top-0 left-0 w-full bg-white shadow-sm z-50">
-  <div className="w-full  px-4 sm:px-6 md:px-8 lg:px-10 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-0">
-    
+      <header className="fixed top-0 left-0 w-full bg-white shadow-sm z-50">
+        <div className="w-full  px-4 sm:px-6 md:px-8 lg:px-10 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-0">
           <div className="flex gap-2">
             <img src="./icon.png" alt="" className="w-9 h-9" />
             <h1 className="text-2xl font-extrabold text-gray-600">
@@ -140,16 +153,33 @@ export default function PeerConnectLanding() {
       </header>
       {/* LOGIN MODAL */}
       {showLogin && (
-      <div> <LoginPage toggleLogin={toggleLogin} setShowPassword={setShowPassword} showForgot={showForgot} setShowRegister={setShowRegister}/></div>
+        <LoginPage
+          toggleLogin={toggleLogin}
+          setShowLogin={setShowLogin}
+          showPassword={showPassword}
+          setShowPassword={setShowPassword}
+          setShowForgot={setShowForgot}
+          setShowRegister={setShowRegister}
+          onLoginSuccess={onLoginSuccess}
+        />
       )}
       {/* FORGOT PASSWORD MODAL */}
       {showForgot && (
-        <ForgotPasword/>
+        <ForgotPasword
+          setShowForgot={setShowForgot}
+          setShowLogin={setShowLogin}
+        />
       )}
 
       {/* REGISTER MODAL */}
       {showRegister && (
-       <RegisterPage/>
+        <RegisterPage
+          toggleRegister={toggleRegister}
+          showPassword={showPassword}
+          setShowPassword={setShowPassword}
+          setShowRegister={setShowRegister}
+          setShowLogin={setShowLogin}
+        />
       )}
 
       {/* ===== FLOATING BACK TO TOP BUTTON ===== */}

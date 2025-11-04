@@ -116,4 +116,53 @@ class UserController extends Controller {
         $this->UserModel->delete($id);
         echo json_encode(['message' => 'User deleted successfully']);
     }
+
+    // Login method - accepts JSON or form-data { email, password }
+   public function login() {
+    // Read input (support JSON payloads)
+    $input = json_decode(file_get_contents('php://input'), true);
+    $email = $input['email'] ?? $_POST['email'] ?? null;
+    $password = $input['password'] ?? $_POST['password'] ?? null;
+
+    if (empty($email) || empty($password)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Email and password are required']);
+        return;
+    }
+
+    // Find user by email
+    $this->call->model('UserModel');
+    $user = $this->UserModel->filter(['email' => $email])->get();
+
+    if (!$user) {
+        http_response_code(401);
+        echo json_encode(['error' => 'Invalid credentials']);
+        return;
+    }
+
+    // Verify password (passwords are stored in password_hash)
+    if (!empty($user['password_hash']) && password_verify($password, $user['password_hash'])) {
+        // Get user role (default to 'Mentee' if not set)
+        $role = $user['role'] ?? 'Mentee';
+        
+        // remove sensitive data
+        unset($user['password_hash']);
+
+        // Optionally, generate a simple session token (replace with JWT in production)
+        $token = base64_encode($user['id'] . ':' . time());
+
+        echo json_encode([
+            'message' => 'Login successful', 
+            'user' => $user, 
+            'role' => $role,
+            'token' => $token
+        ]);
+        return;
+    }
+
+    http_response_code(401);
+    echo json_encode(['error' => 'Invalid credentials']);
+}
+    // Record a visit to a user's profile (increments visits and updates last_visit)
+   
 }

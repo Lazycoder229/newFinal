@@ -58,6 +58,10 @@ $router->get('/api/users/{id}', 'UserController::get_user');
 $router->post('/api/users', 'UserController::create');
 $router->put('/api/users/{id}', 'UserController::update');
 $router->delete('/api/users/{id}', 'UserController::delete');
+// Auth
+$router->post('/api/auth/login', 'UserController::login');
+// Track profile visits
+
 
 // MENTORSHIP ROUTES
 $router->get('/api/mentorships', 'MentorshipController::index');                // Get all mentorships
@@ -81,3 +85,12 @@ $router->get('/api/members/{id}', 'GroupController::get_member');       // Get s
 $router->post('/api/members', 'GroupController::add_member');          // Add a member
 $router->put('/api/members/{id}', 'GroupController::update_member');   // Update a member
 $router->delete('/api/members/{id}', 'GroupController::remove_member'); // Remove a member
+// Forum routes
+$router->get('/api/forum/threads', 'ForumController::threads');
+$router->get('/api/forum/thread/{id}', 'ForumController::get_thread');
+
+$router->post('/api/forum/thread', 'ForumController::create_thread');
+$router->delete('/api/forum/thread/{id}', 'ForumController::delete_thread');
+$router->post('/api/forum/reply', 'ForumController::create_reply');
+$router->get('/api/forum/reply', 'ForumController::reply');
+$router->delete('/api/forum/reply/{id}', 'ForumController::delete_reply');

@@ -19,26 +19,24 @@ import {
 } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+const API_URL = "http://localhost:3000/api/users";
 
 export default function UserManagement() {
-  const API_URL = "http://localhost:3000/api/users";
-
+  // State
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [filterRole, setFilterRole] = useState("All");
+  const [filterStatus, setFilterStatus] = useState("All");
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [submitting, setSubmitting] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isViewing, setIsViewing] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [formErrors, setFormErrors] = useState({});
-  const [search, setSearch] = useState("");
-  const [filterRole, setFilterRole] = useState("All");
-  const [filterStatus, setFilterStatus] = useState("All");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
 
-  // Loading states
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-
+  // Form state
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
@@ -51,45 +49,40 @@ export default function UserManagement() {
     profile_image: "",
     status: "Active",
   });
+  const [formErrors, setFormErrors] = useState({});
 
-  // Load users
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
+  // Fetch users
   const fetchUsers = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const res = await axios.get(API_URL);
-      setUsers(res.data);
+      // expect array in res.data
+      setUsers(res.data || []);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to fetch users", err);
       toast.error("Failed to fetch users");
     } finally {
       setLoading(false);
     }
   };
 
-  // Validation
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // Simple validation
   const validateForm = () => {
     const errors = {};
-    if (!form.first_name.trim()) errors.first_name = "First name is required";
-    if (!form.last_name.trim()) errors.last_name = "Last name is required";
-    if (!form.email.trim()) errors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(form.email))
-      errors.email = "Invalid email format";
-    if (!form.username.trim()) errors.username = "Username is required";
-    if (!isEditing && !form.password.trim())
-      errors.password = "Password is required";
-    if (form.password && form.password.length < 6)
-      errors.password = "Password must be at least 6 characters";
-    if (!form.skills.trim()) errors.skills = "Skills are required";
-
+    if (!form.first_name) errors.first_name = "First name is required";
+    if (!form.last_name) errors.last_name = "Last name is required";
+    if (!form.email) errors.email = "Email is required";
+    if (!form.username) errors.username = "Username is required";
+    if (!isEditing && !form.password) errors.password = "Password is required";
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  // ADD USER
+  // Add handler
   const handleAdd = async () => {
     if (!validateForm()) {
       toast.error("Please fill all required fields");
@@ -99,23 +92,28 @@ export default function UserManagement() {
     try {
       setSubmitting(true);
       const formData = new FormData();
-      for (const key in form) formData.append(key, form[key]);
+      Object.entries(form).forEach(([key, value]) => {
+        if (key === "profile_image") {
+          if (value instanceof File) formData.append("profile_image", value);
+        } else {
+          formData.append(key, value);
+        }
+      });
 
       await axios.post(API_URL, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      toast.success("User added successfully");
+      toast.success("User created successfully!");
       fetchUsers();
       resetForm();
     } catch (err) {
-      console.error(err);
-      toast.error("Failed to add user");
+      console.error("Add failed:", err);
+      toast.error("Failed to create user");
     } finally {
       setSubmitting(false);
     }
   };
-
   // UPDATE USER
   const handleUpdate = async () => {
     if (!validateForm()) {
@@ -132,7 +130,10 @@ export default function UserManagement() {
           if (value instanceof File) {
             formData.append("profile_image", value);
           } else {
-            formData.append("profile_image_old", value || selectedUser.profile_image || "");
+            formData.append(
+              "profile_image_old",
+              value || selectedUser.profile_image || ""
+            );
           }
         } else {
           formData.append(key, value);
@@ -223,6 +224,15 @@ export default function UserManagement() {
     currentPage * itemsPerPage
   );
 
+  // Ensure currentPage is valid when filters change
+  React.useEffect(() => {
+    if (totalPages === 0) {
+      setCurrentPage(1);
+    } else if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages]);
+
   // Render View Modal
   const renderViewModal = () => (
     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-auto overflow-hidden">
@@ -288,11 +298,14 @@ export default function UserManagement() {
             {
               label: "Date Joined",
               value: selectedUser?.date_joined
-                ? new Date(selectedUser.date_joined).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })
+                ? new Date(selectedUser.date_joined).toLocaleDateString(
+                    "en-US",
+                    {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    }
+                  )
                 : "",
               icon: null,
             },
@@ -301,7 +314,9 @@ export default function UserManagement() {
               item.value && (
                 <div key={idx} className="bg-gray-50 rounded-lg p-3">
                   <div className="flex items-center gap-2 mb-1">
-                    {item.icon && <item.icon size={14} className="text-gray-400" />}
+                    {item.icon && (
+                      <item.icon size={14} className="text-gray-400" />
+                    )}
                     <span className="text-xs font-semibold text-gray-600 uppercase">
                       {item.label}
                     </span>
@@ -371,7 +386,9 @@ export default function UserManagement() {
               />
             </label>
           </div>
-          <p className="text-sm text-gray-600 mt-3">Click the icon to upload photo</p>
+          <p className="text-sm text-gray-600 mt-3">
+            Click the icon to upload photo
+          </p>
         </div>
 
         {/* Fields */}
@@ -385,7 +402,9 @@ export default function UserManagement() {
               type="text"
               value={form.first_name}
               onChange={(e) => setForm({ ...form, first_name: e.target.value })}
-              className={`w-full border ${formErrors.first_name ? 'border-red-500' : 'border-gray-300'} py-3 px-4 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
+              className={`w-full border ${
+                formErrors.first_name ? "border-red-500" : "border-gray-300"
+              } py-2 px-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
               placeholder="Enter first name"
               disabled={submitting}
             />
@@ -406,7 +425,9 @@ export default function UserManagement() {
               type="text"
               value={form.last_name}
               onChange={(e) => setForm({ ...form, last_name: e.target.value })}
-              className={`w-full border ${formErrors.last_name ? 'border-red-500' : 'border-gray-300'} py-3 px-4 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
+              className={`w-full border ${
+                formErrors.last_name ? "border-red-500" : "border-gray-300"
+              } py-2 px-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
               placeholder="Enter last name"
               disabled={submitting}
             />
@@ -427,7 +448,9 @@ export default function UserManagement() {
               type="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className={`w-full border ${formErrors.email ? 'border-red-500' : 'border-gray-300'} py-3 px-4 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
+              className={`w-full border ${
+                formErrors.email ? "border-red-500" : "border-gray-300"
+              } py-2 px-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
               placeholder="Enter email address"
               disabled={submitting}
             />
@@ -448,7 +471,9 @@ export default function UserManagement() {
               type="text"
               value={form.username}
               onChange={(e) => setForm({ ...form, username: e.target.value })}
-              className={`w-full border ${formErrors.username ? 'border-red-500' : 'border-gray-300'} py-3 px-4 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
+              className={`w-full border ${
+                formErrors.username ? "border-red-500" : "border-gray-300"
+              } py-3 px-4 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
               placeholder="Enter username"
               disabled={submitting}
             />
@@ -469,7 +494,9 @@ export default function UserManagement() {
               type="text"
               value={form.skills}
               onChange={(e) => setForm({ ...form, skills: e.target.value })}
-              className={`w-full border ${formErrors.skills ? 'border-red-500' : 'border-gray-300'} py-3 px-4 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
+              className={`w-full border ${
+                formErrors.skills ? "border-red-500" : "border-gray-300"
+              } py-3 px-4 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
               placeholder="e.g., JavaScript, Python, React"
               disabled={submitting}
             />
@@ -490,8 +517,12 @@ export default function UserManagement() {
               type="password"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className={`w-full border ${formErrors.password ? 'border-red-500' : 'border-gray-300'} py-3 px-4 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
-              placeholder={isEditing ? "Leave blank to keep current" : "Enter password"}
+              className={`w-full border ${
+                formErrors.password ? "border-red-500" : "border-gray-300"
+              } py-3 px-4 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
+              placeholder={
+                isEditing ? "Leave blank to keep current" : "Enter password"
+              }
               disabled={submitting}
             />
             {formErrors.password && (
@@ -510,7 +541,7 @@ export default function UserManagement() {
             <select
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value })}
-              className="w-full border border-gray-300 py-3 px-4 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              className="w-full border border-gray-300 py-2 px-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               disabled={submitting}
             >
               <option>Admin</option>
@@ -528,7 +559,7 @@ export default function UserManagement() {
             <select
               value={form.status}
               onChange={(e) => setForm({ ...form, status: e.target.value })}
-              className="w-full border border-gray-300 py-3 px-4 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              className="w-full border border-gray-300 py-2 px-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               disabled={submitting}
             >
               <option>Active</option>
@@ -547,7 +578,7 @@ export default function UserManagement() {
             rows="4"
             value={form.bio}
             onChange={(e) => setForm({ ...form, bio: e.target.value })}
-            className="w-full border border-gray-300 py-3 px-4 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none"
+            className="w-full border border-gray-300 py-2 px-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none"
             placeholder="Tell us about yourself..."
             disabled={submitting}
           ></textarea>
@@ -576,7 +607,7 @@ export default function UserManagement() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-slate-100 p-6 lg:p-8">
+    <div className="min-h-screen ">
       <ToastContainer position="top-right" autoClose={3000} />
 
       <div>
@@ -587,18 +618,25 @@ export default function UserManagement() {
               <Users className="text-white" size={32} />
             </div>
             <div>
-              <h1 className="text-4xl font-bold text-gray-900">User Management</h1>
-              <p className="text-lg text-gray-600 mt-1">Manage system users and their roles</p>
+              <h1 className="text-3xl font-bold text-gray-900">
+                User Management
+              </h1>
+              <p className="text-lg text-gray-600 mt-1">
+                Manage system users and their roles
+              </p>
             </div>
           </div>
         </div>
 
         {/* Action Bar */}
-        <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
-          <div className="flex flex-col lg:flex-row gap-4">
+        <div className="bg-white rounded-2xl shadow-sm p-4 mb-4">
+          <div className="flex flex-col lg:flex-row gap-3 items-center lg:items-start lg:justify-between">
             {/* Search */}
             <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <Search
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                size={20}
+              />
               <input
                 type="text"
                 placeholder="Search by name, email, username, or skills..."
@@ -607,25 +645,25 @@ export default function UserManagement() {
                   setSearch(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full pl-12 pr-4 py-3 text-base border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                className="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
               />
             </div>
 
             {/* Filters */}
-            <div className="flex gap-3">
+            <div className="flex gap-2 flex-wrap">
               <select
                 value={filterRole}
                 onChange={(e) => {
                   setFilterRole(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="border border-gray-300 px-4 py-3 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                className="min-w-[120px] border border-gray-300 px-3 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               >
-                <option>All Roles</option>
-                <option>Admin</option>
-                <option>Mentor</option>
-                <option>Mentee</option>
-                <option>Moderator</option>
+                <option value="All">All Roles</option>
+                <option value="Admin">Admin</option>
+                <option value="Mentor">Mentor</option>
+                <option value="Mentee">Mentee</option>
+                <option value="Moderator">Moderator</option>
               </select>
               <select
                 value={filterStatus}
@@ -633,65 +671,73 @@ export default function UserManagement() {
                   setFilterStatus(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="border border-gray-300 px-4 py-3 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                className="min-w-[120px] border border-gray-300 px-3 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               >
-                <option>All Status</option>
-                <option>Active</option>
-                <option>Inactive</option>
-                <option>Banned</option>
+                <option value="All">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+                <option value="Banned">Banned</option>
               </select>
             </div>
 
             {/* Add Button */}
-            <button
-              onClick={() => setIsAdding(true)}
-              className="flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg font-medium text-base whitespace-nowrap"
-            >
-              <Plus size={20} />
-              Add User
-            </button>
+            <div className="mt-3 lg:mt-0">
+              <button
+                onClick={() => setIsAdding(true)}
+                className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg font-medium text-sm whitespace-nowrap"
+              >
+                <Plus size={18} />
+                Add User
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-xl shadow-sm p-5 border-l-4 border-blue-500">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+          <div className="bg-white rounded-xl shadow-sm p-3 border-l-4 border-blue-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Total Users</p>
-                <p className="text-2xl font-bold text-gray-900">{filteredUsers.length}</p>
+                <p className="text-sm font-medium text-gray-600 mb-1">
+                  Total Users
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {filteredUsers.length}
+                </p>
               </div>
               <Users className="text-blue-500" size={32} />
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm p-5 border-l-4 border-green-500">
+          <div className="bg-white rounded-xl shadow-sm p-3 border-l-4 border-green-500">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">Active</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {filteredUsers.filter(u => u.status === "Active").length}
+                  {filteredUsers.filter((u) => u.status === "Active").length}
                 </p>
               </div>
               <CheckCircle className="text-green-500" size={32} />
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm p-5 border-l-4 border-yellow-500">
+          <div className="bg-white rounded-xl shadow-sm p-3 border-l-4 border-yellow-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Inactive</p>
+                <p className="text-sm font-medium text-gray-600 mb-1">
+                  Inactive
+                </p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {filteredUsers.filter(u => u.status === "Inactive").length}
+                  {filteredUsers.filter((u) => u.status === "Inactive").length}
                 </p>
               </div>
               <AlertCircle className="text-yellow-500" size={32} />
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm p-5 border-l-4 border-red-500">
+          <div className="bg-white rounded-xl shadow-sm p-3 border-l-4 border-red-500">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">Banned</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {filteredUsers.filter(u => u.status === "Banned").length}
+                  {filteredUsers.filter((u) => u.status === "Banned").length}
                 </p>
               </div>
               <XCircle className="text-red-500" size={32} />
@@ -707,29 +753,106 @@ export default function UserManagement() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              {/* Mobile cards (shown on small screens) */}
+              <div className="md:hidden p-3">
+                {paginatedUsers.length > 0 ? (
+                  <div className="flex flex-col gap-3">
+                    {paginatedUsers.map((u) => (
+                      <div
+                        key={u.id}
+                        className="bg-white border rounded-lg p-3 shadow-sm"
+                      >
+                        <div className="flex items-start gap-3">
+                          {u.profile_image ? (
+                            <img
+                              src={u.profile_image}
+                              alt={u.first_name}
+                              className="w-12 h-12 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+                              {u.first_name?.[0]}
+                              {u.last_name?.[0]}
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-sm font-semibold text-gray-900">
+                                  {u.first_name} {u.last_name}
+                                </p>
+                                <p className="text-xs text-gray-500 truncate">
+                                  {u.email}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => {
+                                    setIsViewing(true);
+                                    setSelectedUser(u);
+                                  }}
+                                  className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                                >
+                                  <Eye size={16} />
+                                </button>
+                                <button
+                                  onClick={() => handleEdit(u)}
+                                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                                >
+                                  <Edit size={16} />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(u.id)}
+                                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            </div>
+                            <div className="mt-2 text-xs text-gray-600 flex flex-wrap gap-2">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                                {u.role}
+                              </span>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                                {u.status}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center text-gray-600 p-3">
+                    No users found
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop/table view (md+) */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                     <tr>
-                      <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="py-2 px-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
                         User
                       </th>
-                      <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="py-2 px-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
                         Email
                       </th>
-                      <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="py-2 px-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
                         Username
                       </th>
-                      <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="py-2 px-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
                         Role
                       </th>
-                      <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="py-2 px-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
                         Skills
                       </th>
-                      <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="py-2 px-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="py-4 px-6 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="py-2 px-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -737,45 +860,58 @@ export default function UserManagement() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {paginatedUsers.length > 0 ? (
                       paginatedUsers.map((u) => (
-                        <tr key={u.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="py-4 px-6">
+                        <tr
+                          key={u.id}
+                          className="hover:bg-gray-50 transition-colors"
+                        >
+                          <td className="py-2 px-3">
                             <div className="flex items-center gap-3">
                               {u.profile_image ? (
                                 <img
                                   src={u.profile_image}
                                   alt={u.first_name}
-                                  className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+                                  className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
                                 />
                               ) : (
-                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-lg">
-                                  {u.first_name?.[0]}{u.last_name?.[0]}
+                                <div className="w-10 h-10 rounded-full bg-blue-400 flex items-center justify-center text-white font-bold text-sm">
+                                  {u.first_name?.[0]}
+                                  {u.last_name?.[0]}
                                 </div>
                               )}
                               <div>
-                                <p className="text-base font-semibold text-gray-900">
+                                <p className="text-sm font-semibold text-gray-900">
                                   {u.first_name} {u.last_name}
                                 </p>
                               </div>
                             </div>
                           </td>
-                          <td className="py-4 px-6 text-base text-gray-700">{u.email}</td>
-                          <td className="py-4 px-6 text-base text-gray-700">{u.username}</td>
-                          <td className="py-4 px-6">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                              u.role === "Admin" ? "bg-purple-100 text-purple-700" :
-                              u.role === "Mentor" ? "bg-blue-100 text-blue-700" :
-                              u.role === "Mentee" ? "bg-green-100 text-green-700" :
-                              "bg-gray-100 text-gray-700"
-                            }`}>
+                          <td className="py-2 px-3 text-sm text-gray-700">
+                            {u.email}
+                          </td>
+                          <td className="py-2 px-3 text-sm text-gray-700">
+                            {u.username}
+                          </td>
+                          <td className="py-2 px-3">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-sm font-medium ${
+                                u.role === "Admin"
+                                  ? "bg-purple-100 text-purple-700"
+                                  : u.role === "Mentor"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : u.role === "Mentee"
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-gray-100 text-gray-700"
+                              }`}
+                            >
                               {u.role}
                             </span>
                           </td>
-                          <td className="py-4 px-6 text-base text-gray-700">
-                            <div className="max-w-xs truncate">{u.skills}</div>
+                          <td className="py-2 px-3 text-sm text-gray-700 max-w-xs truncate">
+                            {u.skills}
                           </td>
-                          <td className="py-4 px-6">
+                          <td className="py-2 px-3">
                             <span
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-full ${
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-semibold rounded-full ${
                                 u.status === "Active"
                                   ? "bg-green-100 text-green-800"
                                   : u.status === "Inactive"
@@ -784,16 +920,16 @@ export default function UserManagement() {
                               }`}
                             >
                               {u.status === "Active" ? (
-                                <CheckCircle size={14} />
+                                <CheckCircle size={12} />
                               ) : u.status === "Banned" ? (
-                                <XCircle size={14} />
+                                <XCircle size={12} />
                               ) : (
-                                <AlertCircle size={14} />
+                                <AlertCircle size={12} />
                               )}
                               {u.status}
                             </span>
                           </td>
-                          <td className="py-4 px-6">
+                          <td className="py-2 px-3 text-center">
                             <div className="flex items-center justify-center gap-2">
                               <button
                                 onClick={() => {
@@ -803,21 +939,21 @@ export default function UserManagement() {
                                 className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                                 title="View Details"
                               >
-                                <Eye size={18} />
+                                <Eye size={16} />
                               </button>
                               <button
                                 onClick={() => handleEdit(u)}
-                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
                                 title="Edit User"
                               >
-                                <Edit size={18} />
+                                <Edit size={16} />
                               </button>
                               <button
                                 onClick={() => handleDelete(u.id)}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
                                 title="Delete User"
                               >
-                                <Trash2 size={18} />
+                                <Trash2 size={16} />
                               </button>
                             </div>
                           </td>
@@ -825,14 +961,11 @@ export default function UserManagement() {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="7" className="text-center py-12">
-                          <Users className="mx-auto mb-3 text-gray-400" size={48} />
-                          <p className="text-base text-gray-600 font-medium">No users found</p>
-                          <p className="text-sm text-gray-500 mt-1">
-                            {search || filterRole !== "All" || filterStatus !== "All" 
-                              ? "Try adjusting your filters" 
-                              : "Create your first user to get started"}
-                          </p>
+                        <td
+                          colSpan="7"
+                          className="text-center py-8 text-gray-600"
+                        >
+                          No users found
                         </td>
                       </tr>
                     )}
@@ -842,17 +975,27 @@ export default function UserManagement() {
 
               {/* Pagination */}
               {totalPages > 0 && (
-                <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
-                  <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <span className="text-base text-gray-700 font-medium">
-                      Showing {(currentPage - 1) * itemsPerPage + 1}–
-                      {Math.min(currentPage * itemsPerPage, filteredUsers.length)} of {filteredUsers.length} users
+                <div className="bg-gray-50 px-4 py-3 border-t border-gray-200">
+                  <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <span className="text-sm text-gray-700 font-medium">
+                      Showing{" "}
+                      {filteredUsers.length === 0
+                        ? 0
+                        : (currentPage - 1) * itemsPerPage + 1}
+                      –
+                      {filteredUsers.length === 0
+                        ? 0
+                        : Math.min(
+                            currentPage * itemsPerPage,
+                            filteredUsers.length
+                          )}{" "}
+                      of {filteredUsers.length} users
                     </span>
                     <div className="flex gap-2">
                       <button
                         disabled={currentPage === 1}
                         onClick={() => setCurrentPage((p) => p - 1)}
-                        className={`px-4 py-2 rounded-lg text-base font-medium transition-colors ${
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                           currentPage === 1
                             ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                             : "bg-blue-600 text-white hover:bg-blue-700"
@@ -875,7 +1018,7 @@ export default function UserManagement() {
                           <button
                             key={pageNum}
                             onClick={() => setCurrentPage(pageNum)}
-                            className={`px-4 py-2 rounded-lg text-base font-medium transition-colors ${
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                               currentPage === pageNum
                                 ? "bg-blue-600 text-white"
                                 : "bg-gray-100 hover:bg-gray-200 text-gray-700"
@@ -888,7 +1031,7 @@ export default function UserManagement() {
                       <button
                         disabled={currentPage === totalPages}
                         onClick={() => setCurrentPage((p) => p + 1)}
-                        className={`px-4 py-2 rounded-lg text-base font-medium transition-colors ${
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                           currentPage === totalPages
                             ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                             : "bg-blue-600 text-white hover:bg-blue-700"

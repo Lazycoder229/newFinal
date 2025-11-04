@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Edit, Trash2, Plus, Search, Users, Calendar, CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
+import {
+  Edit,
+  Trash2,
+  Plus,
+  Search,
+  Users,
+  Calendar,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Loader2,
+} from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -21,6 +32,7 @@ export default function Mentor() {
   });
   const [formErrors, setFormErrors] = useState({});
   const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("All");
 
   // Loading states
   const [loading, setLoading] = useState(true);
@@ -69,7 +81,8 @@ export default function Mentor() {
     if (!form.mentor_id) errors.mentor_id = "Please select a mentor";
     if (!form.mentee_id) errors.mentee_id = "Please select a mentee";
     if (!form.start_date) errors.start_date = "Start date is required";
-    if (form.mentor_id === form.mentee_id) errors.mentee_id = "Mentor and mentee cannot be the same person";
+    if (form.mentor_id === form.mentee_id)
+      errors.mentee_id = "Mentor and mentee cannot be the same person";
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -135,17 +148,24 @@ export default function Mentor() {
     setIsModalOpen(false);
   };
 
-  // Filter and paginate mentorships
+  // Filter and paginate mentorships (search + status filter)
   const filtered = Array.isArray(mentorships)
     ? mentorships.filter((m) => {
         const mentorName =
-          users.find((u) => u.id === m.mentor_id)?.first_name || "";
+          (users.find((u) => u.id === m.mentor_id)?.first_name || "") +
+          " " +
+          (users.find((u) => u.id === m.mentor_id)?.last_name || "");
         const menteeName =
-          users.find((u) => u.id === m.mentee_id)?.first_name || "";
-        return (
-          mentorName.toLowerCase().includes(search.toLowerCase()) ||
-          menteeName.toLowerCase().includes(search.toLowerCase())
-        );
+          (users.find((u) => u.id === m.mentee_id)?.first_name || "") +
+          " " +
+          (users.find((u) => u.id === m.mentee_id)?.last_name || "");
+        const term = search.toLowerCase();
+        const matchesSearch =
+          mentorName.toLowerCase().includes(term) ||
+          menteeName.toLowerCase().includes(term);
+        const matchesStatus =
+          filterStatus === "All" || m.status === filterStatus;
+        return matchesSearch && matchesStatus;
       })
     : [];
 
@@ -154,6 +174,15 @@ export default function Mentor() {
     (currentPage - 1) * LIMIT,
     currentPage * LIMIT
   );
+
+  // clamp currentPage when filters change
+  useEffect(() => {
+    if (totalPages === 0) {
+      setCurrentPage(1);
+    } else if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages]);
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -169,7 +198,7 @@ export default function Mentor() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-6 lg:p-8">
+    <div className="min-h-screen ">
       <ToastContainer position="top-right" autoClose={3000} />
 
       <div className="">
@@ -180,18 +209,25 @@ export default function Mentor() {
               <Users className="text-white" size={32} />
             </div>
             <div>
-              <h1 className="text-4xl font-bold text-gray-900">Mentorship Management</h1>
-              <p className="text-lg text-gray-600 mt-1">Manage mentor-mentee relationships and track progress</p>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Mentorship Management
+              </h1>
+              <p className="text-sm text-gray-600 mt-1">
+                Manage mentor-mentee relationships and track progress
+              </p>
             </div>
           </div>
         </div>
 
         {/* Action Bar */}
-        <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
-          <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4">
+        <div className="bg-white rounded-2xl shadow-sm p-3 mb-4">
+          <div className="flex flex-col lg:flex-row gap-3 items-center lg:items-start lg:justify-between">
             {/* Search */}
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                size={18}
+              />
               <input
                 type="text"
                 placeholder="Search by mentor or mentee name..."
@@ -200,60 +236,84 @@ export default function Mentor() {
                   setSearch(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full pl-12 pr-4 py-3 text-base border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                className="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
               />
             </div>
 
-            {/* Add Button */}
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg font-medium text-base"
-            >
-              <Plus size={20} />
-              Add Mentorship
-            </button>
+            {/* Filters */}
+            <div className="flex gap-2 items-center">
+              <select
+                value={filterStatus}
+                onChange={(e) => {
+                  setFilterStatus(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="min-w-[140px] border border-gray-300 px-3 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              >
+                <option value="All">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Pending">Pending</option>
+                <option value="Completed">Completed</option>
+                <option value="Reject">Rejected</option>
+              </select>
+
+              {/* Add Button */}
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="flex items-center justify-center gap-2 bg-blue-600 text-white px-3 py-1.5 rounded-xl hover:bg-blue-700 transition-colors shadow-sm font-medium text-sm whitespace-nowrap"
+              >
+                <Plus size={16} />
+                Add
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-xl shadow-sm p-5 border-l-4 border-blue-500">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+          <div className="bg-white rounded-xl shadow-sm p-3 border-l-4 border-blue-500">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">Total</p>
-                <p className="text-2xl font-bold text-gray-900">{filtered.length}</p>
+                <p className="text-xl font-bold text-gray-900">
+                  {filtered.length}
+                </p>
               </div>
               <Users className="text-blue-500" size={32} />
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm p-5 border-l-4 border-green-500">
+          <div className="bg-white rounded-xl shadow-sm p-3 border-l-4 border-green-500">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">Active</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {filtered.filter(m => m.status === "Active").length}
+                <p className="text-xl font-bold text-gray-900">
+                  {filtered.filter((m) => m.status === "Active").length}
                 </p>
               </div>
               <CheckCircle className="text-green-500" size={32} />
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm p-5 border-l-4 border-yellow-500">
+          <div className="bg-white rounded-xl shadow-sm p-3 border-l-4 border-yellow-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Pending</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {filtered.filter(m => m.status === "Pending").length}
+                <p className="text-sm font-medium text-gray-600 mb-1">
+                  Pending
+                </p>
+                <p className="text-xl font-bold text-gray-900">
+                  {filtered.filter((m) => m.status === "Pending").length}
                 </p>
               </div>
               <Clock className="text-yellow-500" size={32} />
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm p-5 border-l-4 border-gray-500">
+          <div className="bg-white rounded-xl shadow-sm p-3 border-l-4 border-gray-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Completed</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {filtered.filter(m => m.status === "Completed").length}
+                <p className="text-sm font-medium text-gray-600 mb-1">
+                  Completed
+                </p>
+                <p className="text-xl font-bold text-gray-900">
+                  {filtered.filter((m) => m.status === "Completed").length}
                 </p>
               </div>
               <CheckCircle className="text-gray-500" size={32} />
@@ -269,26 +329,150 @@ export default function Mentor() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              {/* Mobile cards (small screens) */}
+              <div className="md:hidden p-3">
+                {paginated.length > 0 ? (
+                  <div className="flex flex-col gap-3">
+                    {paginated.map((m) => {
+                      const mentor = users.find((u) => u.id === m.mentor_id);
+                      const mentee = users.find((u) => u.id === m.mentee_id);
+                      return (
+                        <div
+                          key={m.mentorship_id}
+                          className="bg-white border rounded-lg p-3 shadow-sm"
+                        >
+                          <div className="flex items-start gap-3">
+                            {mentor ? (
+                              mentor.profile_image ? (
+                                <img
+                                  src={mentor.profile_image}
+                                  alt={mentor.first_name}
+                                  className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+                                  {mentor.first_name?.[0]}
+                                  {mentor.last_name?.[0]}
+                                </div>
+                              )
+                            ) : (
+                              <div className="w-12 h-12 rounded-full bg-gray-200" />
+                            )}
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-semibold text-gray-900">
+                                    {mentor
+                                      ? `${mentor.first_name} ${
+                                          mentor.last_name || ""
+                                        }`
+                                      : "-"}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {mentee
+                                      ? `${mentee.first_name} ${
+                                          mentee.last_name || ""
+                                        }`
+                                      : "-"}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => handleEdit(m)}
+                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                                    title="Edit"
+                                    aria-label="Edit mentorship"
+                                  >
+                                    <Edit size={16} />
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      handleDelete(m.mentorship_id)
+                                    }
+                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                                    title="Delete"
+                                    aria-label="Delete mentorship"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                  {m.status === "Pending" && (
+                                    <>
+                                      <button
+                                        onClick={() =>
+                                          handleStatusChange(
+                                            m.mentorship_id,
+                                            "Active"
+                                          )
+                                        }
+                                        title="Accept mentorship"
+                                        aria-label="Accept mentorship"
+                                        className="p-2 text-green-600 hover:text-green-700 rounded-lg bg-transparent hover:bg-transparent"
+                                      >
+                                        <CheckCircle size={16} />
+                                      </button>
+
+                                      <button
+                                        onClick={() =>
+                                          handleStatusChange(
+                                            m.mentorship_id,
+                                            "Reject"
+                                          )
+                                        }
+                                        title="Decline mentorship"
+                                        aria-label="Decline mentorship"
+                                        className="p-2 text-red-600 hover:text-red-700 rounded-lg bg-transparent hover:bg-transparent"
+                                      >
+                                        <XCircle size={16} />
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="mt-2 text-xs text-gray-600 flex items-center gap-3">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                                  {m.start_date || "-"}
+                                </span>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                                  {m.end_date || "-"}
+                                </span>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800">
+                                  {m.status}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center text-gray-600 p-3">
+                    No mentorships found
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop/table view (md+) */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                     <tr>
-                      <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="py-2 px-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
                         Mentor
                       </th>
-                      <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="py-2 px-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
                         Mentee
                       </th>
-                      <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="py-2 px-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
                         Start Date
                       </th>
-                      <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="py-2 px-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
                         End Date
                       </th>
-                      <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="py-2 px-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="py-4 px-6 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="py-2 px-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -299,32 +483,85 @@ export default function Mentor() {
                         const mentor = users.find((u) => u.id === m.mentor_id);
                         const mentee = users.find((u) => u.id === m.mentee_id);
                         return (
-                          <tr key={m.mentorship_id} className="hover:bg-gray-50 transition-colors">
-                            <td className="py-4 px-6 text-base text-gray-900 font-medium">
-                              {mentor
-                                ? `${mentor.first_name}${mentor.last_name ? " " + mentor.last_name : ""}`
-                                : "-"}
+                          <tr
+                            key={m.mentorship_id}
+                            className="hover:bg-gray-50 transition-colors"
+                          >
+                            <td className="py-2 px-3">
+                              <div className="flex items-center gap-3">
+                                {mentor && mentor.profile_image ? (
+                                  <img
+                                    src={mentor.profile_image}
+                                    alt={mentor.first_name}
+                                    className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                                  />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-full bg-blue-400 flex items-center justify-center text-white font-bold text-sm">
+                                    {mentor
+                                      ? `${mentor.first_name?.[0] || ""}${
+                                          mentor.last_name?.[0] || ""
+                                        }`
+                                      : ""}
+                                  </div>
+                                )}
+                                <div>
+                                  <p className="text-sm font-semibold text-gray-900">
+                                    {mentor
+                                      ? `${mentor.first_name}${
+                                          mentor.last_name
+                                            ? " " + mentor.last_name
+                                            : ""
+                                        }`
+                                      : "-"}
+                                  </p>
+                                </div>
+                              </div>
                             </td>
-                            <td className="py-4 px-6 text-base text-gray-900 font-medium">
-                              {mentee
-                                ? `${mentee.first_name}${mentee.last_name ? " " + mentee.last_name : ""}`
-                                : "-"}
+                            <td className="py-2 px-3">
+                              <div className="flex items-center gap-3">
+                                {mentee && mentee.profile_image ? (
+                                  <img
+                                    src={mentee.profile_image}
+                                    alt={mentee.first_name}
+                                    className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                                  />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-full bg-blue-400 flex items-center justify-center text-white font-bold text-sm">
+                                    {mentee
+                                      ? `${mentee.first_name?.[0] || ""}${
+                                          mentee.last_name?.[0] || ""
+                                        }`
+                                      : ""}
+                                  </div>
+                                )}
+                                <div>
+                                  <p className="text-sm font-semibold text-gray-900">
+                                    {mentee
+                                      ? `${mentee.first_name}${
+                                          mentee.last_name
+                                            ? " " + mentee.last_name
+                                            : ""
+                                        }`
+                                      : "-"}
+                                  </p>
+                                </div>
+                              </div>
                             </td>
-                            <td className="py-4 px-6 text-base text-gray-700">
+                            <td className="py-2 px-3 text-sm text-gray-700">
                               <div className="flex items-center gap-2">
-                                <Calendar size={16} className="text-gray-400" />
+                                <Calendar size={14} className="text-gray-400" />
                                 {m.start_date || "-"}
                               </div>
                             </td>
-                            <td className="py-4 px-6 text-base text-gray-700">
+                            <td className="py-2 px-3 text-sm text-gray-700">
                               <div className="flex items-center gap-2">
-                                <Calendar size={16} className="text-gray-400" />
+                                <Calendar size={14} className="text-gray-400" />
                                 {m.end_date || "-"}
                               </div>
                             </td>
-                            <td className="py-4 px-6">
+                            <td className="py-2 px-3">
                               <span
-                                className={`inline-flex items-center px-3 py-1.5 text-sm font-semibold rounded-full ${
+                                className={`inline-flex items-center px-2 py-0.5 text-sm font-semibold rounded-full ${
                                   m.status === "Active"
                                     ? "bg-green-100 text-green-800"
                                     : m.status === "Completed"
@@ -338,39 +575,51 @@ export default function Mentor() {
                                 {m.status}
                               </span>
                             </td>
-                            <td className="py-4 px-6">
-                              <div className="flex items-center justify-center gap-2 flex-wrap">
+                            <td className="py-2 px-3 text-center">
+                              <div className="flex items-center justify-center gap-2">
                                 <button
                                   onClick={() => handleEdit(m)}
                                   className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                   title="Edit"
+                                  aria-label="Edit mentorship"
                                 >
-                                  <Edit size={18} />
+                                  <Edit size={16} />
                                 </button>
                                 <button
                                   onClick={() => handleDelete(m.mentorship_id)}
                                   className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                   title="Delete"
+                                  aria-label="Delete mentorship"
                                 >
-                                  <Trash2 size={18} />
+                                  <Trash2 size={16} />
                                 </button>
                                 {m.status === "Pending" && (
                                   <>
                                     <button
                                       onClick={() =>
-                                        handleStatusChange(m.mentorship_id, "Active")
+                                        handleStatusChange(
+                                          m.mentorship_id,
+                                          "Active"
+                                        )
                                       }
-                                      className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                                      title="Accept mentorship"
+                                      aria-label="Accept mentorship"
+                                      className="p-2 text-green-600 hover:bg-green-50 rounded-md"
                                     >
-                                      Accept
+                                      <CheckCircle size={16} />
                                     </button>
                                     <button
                                       onClick={() =>
-                                        handleStatusChange(m.mentorship_id, "Reject")
+                                        handleStatusChange(
+                                          m.mentorship_id,
+                                          "Reject"
+                                        )
                                       }
-                                      className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+                                      title="Decline mentorship"
+                                      aria-label="Decline mentorship"
+                                      className="p-2 text-red-600 hover:bg-red-50 rounded-md"
                                     >
-                                      Decline
+                                      <XCircle size={16} />
                                     </button>
                                   </>
                                 )}
@@ -381,12 +630,11 @@ export default function Mentor() {
                       })
                     ) : (
                       <tr>
-                        <td colSpan="6" className="text-center py-12">
-                          <Users className="mx-auto mb-3 text-gray-400" size={48} />
-                          <p className="text-base text-gray-600 font-medium">No mentorships found</p>
-                          <p className="text-sm text-gray-500 mt-1">
-                            {search ? "Try adjusting your search" : "Create your first mentorship to get started"}
-                          </p>
+                        <td
+                          colSpan="6"
+                          className="text-center py-8 text-gray-600"
+                        >
+                          No mentorships found
                         </td>
                       </tr>
                     )}
@@ -396,17 +644,24 @@ export default function Mentor() {
 
               {/* Pagination */}
               {totalPages > 0 && (
-                <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
-                  <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <span className="text-base text-gray-700 font-medium">
-                      Showing {(currentPage - 1) * LIMIT + 1}–
-                      {Math.min(currentPage * LIMIT, filtered.length)} of {filtered.length} results
+                <div className="bg-gray-50 px-4 py-3 border-t border-gray-200">
+                  <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <span className="text-sm text-gray-700 font-medium">
+                      Showing{" "}
+                      {filtered.length === 0
+                        ? 0
+                        : (currentPage - 1) * LIMIT + 1}
+                      –
+                      {filtered.length === 0
+                        ? 0
+                        : Math.min(currentPage * LIMIT, filtered.length)}{" "}
+                      of {filtered.length} results
                     </span>
                     <div className="flex gap-2">
                       <button
                         disabled={currentPage === 1}
                         onClick={() => setCurrentPage((p) => p - 1)}
-                        className={`px-4 py-2 rounded-lg text-base font-medium transition-colors ${
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                           currentPage === 1
                             ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                             : "bg-blue-600 text-white hover:bg-blue-700"
@@ -429,7 +684,7 @@ export default function Mentor() {
                           <button
                             key={pageNum}
                             onClick={() => setCurrentPage(pageNum)}
-                            className={`px-4 py-2 rounded-lg text-base font-medium transition-colors ${
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                               currentPage === pageNum
                                 ? "bg-blue-600 text-white"
                                 : "bg-gray-100 hover:bg-gray-200 text-gray-700"
@@ -442,7 +697,7 @@ export default function Mentor() {
                       <button
                         disabled={currentPage === totalPages}
                         onClick={() => setCurrentPage((p) => p + 1)}
-                        className={`px-4 py-2 rounded-lg text-base font-medium transition-colors ${
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                           currentPage === totalPages
                             ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                             : "bg-blue-600 text-white hover:bg-blue-700"
@@ -463,17 +718,21 @@ export default function Mentor() {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-auto overflow-hidden">
               {/* Modal Header */}
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3">
                 <h2 className="text-2xl font-bold text-white">
-                  {selectedMentorship ? "Edit Mentorship" : "Create New Mentorship"}
+                  {selectedMentorship
+                    ? "Edit Mentorship"
+                    : "Create New Mentorship"}
                 </h2>
                 <p className="text-blue-100 text-sm mt-1">
-                  {selectedMentorship ? "Update mentorship details" : "Add a new mentor-mentee relationship"}
+                  {selectedMentorship
+                    ? "Update mentorship details"
+                    : "Add a new mentor-mentee relationship"}
                 </p>
               </div>
 
               {/* Modal Body */}
-              <div className="p-6 space-y-5 max-h-[calc(100vh-300px)] overflow-y-auto">
+              <div className="p-4 space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto">
                 {/* Mentor Select */}
                 <div>
                   <label className="block text-base font-semibold text-gray-800 mb-2">
@@ -484,7 +743,11 @@ export default function Mentor() {
                     onChange={(e) =>
                       setForm({ ...form, mentor_id: e.target.value })
                     }
-                    className={`w-full border ${formErrors.mentor_id ? 'border-red-500' : 'border-gray-300'} py-3 px-4 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
+                    className={`w-full border ${
+                      formErrors.mentor_id
+                        ? "border-red-500"
+                        : "border-gray-300"
+                    } py-2 px-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
                     disabled={submitting}
                   >
                     <option value="">Select Mentor</option>
@@ -516,7 +779,11 @@ export default function Mentor() {
                     onChange={(e) =>
                       setForm({ ...form, mentee_id: e.target.value })
                     }
-                    className={`w-full border ${formErrors.mentee_id ? 'border-red-500' : 'border-gray-300'} py-3 px-4 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
+                    className={`w-full border ${
+                      formErrors.mentee_id
+                        ? "border-red-500"
+                        : "border-gray-300"
+                    } py-2 px-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
                     disabled={submitting}
                   >
                     <option value="">Select Mentee</option>
@@ -551,7 +818,11 @@ export default function Mentor() {
                       onChange={(e) =>
                         setForm({ ...form, start_date: e.target.value })
                       }
-                      className={`w-full border ${formErrors.start_date ? 'border-red-500' : 'border-gray-300'} py-3 px-4 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
+                      className={`w-full border ${
+                        formErrors.start_date
+                          ? "border-red-500"
+                          : "border-gray-300"
+                      } py-2 px-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
                       disabled={submitting}
                     />
                     {formErrors.start_date && (
@@ -573,7 +844,7 @@ export default function Mentor() {
                       onChange={(e) =>
                         setForm({ ...form, end_date: e.target.value })
                       }
-                      className="w-full border border-gray-300 py-3 px-4 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                      className="w-full border border-gray-300 py-2 px-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                       disabled={submitting}
                     />
                   </div>
@@ -589,7 +860,7 @@ export default function Mentor() {
                     onChange={(e) =>
                       setForm({ ...form, status: e.target.value })
                     }
-                    className="w-full border border-gray-300 py-3 px-4 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                    className="w-full border border-gray-300 py-2 px-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                     disabled={submitting}
                   >
                     <option value="Pending">Pending</option>
@@ -601,21 +872,21 @@ export default function Mentor() {
               </div>
 
               {/* Modal Footer */}
-              <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+              <div className="bg-gray-50 px-4 py-3 border-t border-gray-200 flex justify-end gap-3">
                 <button
                   onClick={resetForm}
                   disabled={submitting}
-                  className="px-6 py-3 border border-gray-300 rounded-xl text-base font-medium text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50"
+                  className="px-4 py-2 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-xl text-base font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
                 >
-                  {submitting && <Loader2 className="animate-spin" size={18} />}
-                  {selectedMentorship ? "Update Mentorship" : "Create Mentorship"}
+                  {submitting && <Loader2 className="animate-spin" size={16} />}
+                  {selectedMentorship ? "Update" : "Create"}
                 </button>
               </div>
             </div>
