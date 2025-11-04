@@ -73,9 +73,9 @@ CREATE TABLE messages (
   FOREIGN KEY (group_id) REFERENCES groups(group_id),
   FOREIGN KEY (sender_id) REFERENCES users(user_id)
 );
-USE peerconnectdb
+
 CREATE TABLE forum_threads (
-  thread_id INT AUTO_INCREMENT PRIMARY KEY,
+  thread_id 	BIGINT(20) AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
   content TEXT NOT NULL,
   created_by INT NOT NULL,
@@ -86,7 +86,7 @@ CREATE TABLE forum_threads (
 );
 
 CREATE TABLE forum_replies (
-  reply_id INT AUTO_INCREMENT PRIMARY KEY,
+  reply_id BIGINT(20) AUTO_INCREMENT PRIMARY KEY,
   thread_id INT NOT NULL,
   user_id INT NOT NULL,
   content TEXT NOT NULL,
