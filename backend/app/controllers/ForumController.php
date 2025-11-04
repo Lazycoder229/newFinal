@@ -32,29 +32,51 @@ class ForumController extends Controller {
         $reply = $this->ForumReplyModel->all();
         echo json_encode($reply);
     }
-    
-  public function get_thread($id) {
-        $thread = $this->ForumModel->getWithUser($id);
+     public function get_replies($reply_id) {
+    $reply = $this->ForumReplyModel->find($reply_id);
 
-        if (!$thread) {
-            http_response_code(404);
-            echo json_encode(['error' => 'Thread not found']);
-            return;
-        }
-
-        $replies = $this->ForumReplyModel->getWithUsers($id);
-
-        echo json_encode([
-            'thread_id' => $thread['thread_id'],
-            'title' => $thread['title'],
-            'content' => $thread['content'],
-            'created_by' => $thread['created_by'],
-            'created_by_name' => $thread['created_by_name'] ?? 'Unknown',
-            'created_at' => $thread['created_at'],
-            'replies' => $replies
-        ]);
+    if (!$reply) {
+        http_response_code(404);
+        echo json_encode(['error' => 'Reply not found']);
+        return;
     }
 
+    echo json_encode([
+        'reply_id' => $reply['reply_id'],
+        'thread_id' => $reply['thread_id'],
+        'user_id' => $reply['user_id'],
+        'content' => $reply['content'],
+        'created_at' => $reply['created_at'],
+    ]);
+}
+
+public function get_thread($thread_id) {
+    $thread = $this->ForumModel->find($thread_id);
+
+    if (!$thread) {
+        http_response_code(404);
+        echo json_encode(['error' => 'Thread not found']);
+        return;
+    }
+
+    // Direct query
+    $replies = $this->ForumReplyModel
+        ->db
+        ->table('forum_replies')
+        ->where('thread_id', $thread_id)
+        ->get_all();
+
+    echo json_encode([
+        'thread_id'       => $thread['thread_id'],
+        'title'           => $thread['title'],
+        'content'         => $thread['content'],
+        'created_by'      => $thread['created_by'],
+        'created_by_name' => $thread['created_by_name'] ?? 'Unknown',
+        'created_at'      => $thread['created_at'],
+        'group_id'        => $thread['group_id'],
+        'replies'         => $replies,
+    ]);
+}     
    public function create_thread() {
     // Get the raw JSON input
     $input = file_get_contents('php://input');
@@ -140,6 +162,7 @@ class ForumController extends Controller {
             http_response_code(500);
         }
     }
+
 
     // DELETE /api/forum/reply/:id
     public function delete_reply($reply_id) {

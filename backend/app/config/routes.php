@@ -93,4 +93,5 @@ $router->post('/api/forum/thread', 'ForumController::create_thread');
 $router->delete('/api/forum/thread/{id}', 'ForumController::delete_thread');
 $router->post('/api/forum/reply', 'ForumController::create_reply');
 $router->get('/api/forum/reply', 'ForumController::reply');
+$router->get('/api/forum/reply/{id}', 'ForumController::get_replies');
 $router->delete('/api/forum/reply/{id}', 'ForumController::delete_reply');
